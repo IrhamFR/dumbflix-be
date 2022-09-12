@@ -8,6 +8,6 @@ func RouteInit(r *mux.Router) {
 	TodoRoutes(r)
 	UserRoutes(r)
 	AuthRoutes(r)
-	ProfileRoutes(r)
-	ProductRoutes(r)
+	filmRoutes(r)
+	categoryRoutes(r)
 }
