@@ -1,10 +1,11 @@
 package handlers
 
 import (
+	episodedto "dumbflix/dto/episode"
 	dto "dumbflix/dto/result"
-	usersdto "dumbflix/dto/users"
 	"dumbflix/models"
 	"dumbflix/repositories"
+
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -13,34 +14,34 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type handler struct {
-	UserRepository repositories.UserRepository
+type handlers struct {
+	EpisodeRepository repositories.EpisodeRepository
 }
 
-func HandlerUser(UserRepository repositories.UserRepository) *handler {
-	return &handler{UserRepository}
+func HandlerEpisode(EpisodeRepository repositories.EpisodeRepository) *handlers {
+	return &handlers{EpisodeRepository}
 }
 
-func (h *handler) FindUsers(w http.ResponseWriter, r *http.Request) {
+func (h *handlers) FindEpisode(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	users, err := h.UserRepository.FindUsers()
+	episodes, err := h.EpisodeRepository.FindEpisode()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err.Error())
+		response := dto.ErrorResult{Code: http.StatusInternalServerError}
+		json.NewEncoder(w).Encode(response)
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: users}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: episodes}
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *handler) GetUser(w http.ResponseWriter, r *http.Request) {
+func (h *handlers) GetEpisode(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
-
-	user, err := h.UserRepository.GetUser(id)
+	episode, err := h.EpisodeRepository.GetEpisode(id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -49,14 +50,14 @@ func (h *handler) GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: user}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: episode}
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *handler) CreateUser(w http.ResponseWriter, r *http.Request) {
+func (h *handlers) CreateEpisode(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	request := new(usersdto.CreateUserRequest)
+	request := new(episodedto.CreateEpisodeRequest)
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -73,34 +74,28 @@ func (h *handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// data form pattern submit to pattern entity db user
-	user := models.User{
-		FullName:  request.FullName,
-		Email:     request.Email,
-		Password:  request.Password,
-		Gender:    request.Gender,
-		Phone:     request.Phone,
-		Address:   request.Address,
-		Subscribe: request.Subscribe,
-		Status:    request.Status,
+	episode := models.Episode{
+		Title:         request.Title,
+		ThumbnailFilm: request.ThumbnailFilm,
+		LinkFilm:      request.LinkFilm,
+		FilmID:        request.FilmID,
 	}
 
-	data, err := h.UserRepository.CreateUser(user)
+	data, err := h.EpisodeRepository.CreateEpisode(episode)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(err.Error())
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponse(data)}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponseEpisode(data)}
 	json.NewEncoder(w).Encode(response)
-
 }
 
-func (h *handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+func (h *handlers) UpdateEpisode(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	request := new(usersdto.UpdateUserRequest) //take pattern data submission
+	request := new(episodedto.UpdateEpisodeRequest)
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -109,7 +104,7 @@ func (h *handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
-	user, err := h.UserRepository.GetUser(int(id))
+	episode, err := h.EpisodeRepository.GetEpisode(int(id))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -117,19 +112,19 @@ func (h *handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if request.FullName != "" {
-		user.FullName = request.FullName
+	if request.Title != "" {
+		episode.Title = request.Title
 	}
 
-	if request.Email != "" {
-		user.Email = request.Email
+	if request.ThumbnailFilm != "" {
+		episode.ThumbnailFilm = request.ThumbnailFilm
 	}
 
-	if request.Password != "" {
-		user.Password = request.Password
+	if request.LinkFilm != "" {
+		episode.LinkFilm = request.LinkFilm
 	}
 
-	data, err := h.UserRepository.UpdateUser(user)
+	data, err := h.EpisodeRepository.UpdateEpisode(episode)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
@@ -138,15 +133,15 @@ func (h *handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponse(data)}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponseEpisode(data)}
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+func (h *handlers) DeleteEpisode(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
-	user, err := h.UserRepository.GetUser(id)
+	episode, err := h.EpisodeRepository.GetEpisode(id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -154,7 +149,7 @@ func (h *handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := h.UserRepository.DeleteUser(user)
+	data, err := h.EpisodeRepository.DeleteEpisode(episode)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
@@ -163,20 +158,17 @@ func (h *handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponse(data)}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponseEpisode(data)}
 	json.NewEncoder(w).Encode(response)
+
 }
 
-func convertResponse(u models.User) usersdto.UserResponse {
-	return usersdto.UserResponse{
-		ID:        u.ID,
-		FullName:  u.FullName,
-		Email:     u.Email,
-		Password:  u.Password,
-		Gender:    u.Gender,
-		Phone:     u.Phone,
-		Address:   u.Address,
-		Subscribe: u.Subscribe,
-		Status:    u.Status,
+func convertResponseEpisode(e models.Episode) models.EpisodeResponse {
+	return models.EpisodeResponse{
+		ID:            e.ID,
+		Title:         e.Title,
+		ThumbnailFilm: e.ThumbnailFilm,
+		LinkFilm:      e.LinkFilm,
+		Film:          e.Film,
 	}
 }

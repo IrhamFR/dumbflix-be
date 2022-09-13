@@ -10,13 +10,12 @@ import (
 var SecretKey = os.Getenv("SECRET_KEY")
 
 func GenerateToken(claims *jwt.MapClaims) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, *claims)
 	webtoken, err := token.SignedString([]byte(SecretKey))
 	if err != nil {
 		return "", err
 	}
-
-	return webtoken, nil
+	return webtoken, err
 }
 
 func VerifyToken(tokenString string) (*jwt.Token, error) {
@@ -43,6 +42,5 @@ func DecodeToken(tokenString string) (jwt.MapClaims, error) {
 	if isOk && token.Valid {
 		return claims, nil
 	}
-
-	return nil, fmt.Errorf("invalid token")
+	return nil, fmt.Errorf("invalid Token")
 }

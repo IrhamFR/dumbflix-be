@@ -1,26 +1,17 @@
 package authdto
 
-type AuthRequest struct {
-	Name     string `gorm:"type: varchar(255)" json:"name"`
-	Email    string `gorm:"type: varchar(255)" json:"email"`
-	Password string `gorm:"type: varchar(255)" json:"password"`
-}
-
 type RegisterRequest struct {
-	Name     string `gorm:"type: varchar(255)" json:"name"`
-	Email    string `gorm:"type: varchar(255)" json:"email"`
-	Password string `gorm:"type: varchar(255)" json:"password"`
+	FullName  string `gorm:"type: varchar(255)" json:"fullname" validate:"required"`
+	Email     string `gorm:"type: varchar(255)" json:"email" validate:"required"`
+	Password  string `gorm:"type: varchar(255)" json:"password" validate:"required"`
+	Gender    string `json:"gender" gorm:"type:varchar(50)"`
+	Phone     int    `json:"phone" gorm:"type:int"`
+	Address   string `json:"address" gorm:"type:varchar(225)"`
+	Subscribe bool   `json:"subscribe" gorm:"type:varchar(50)"`
+	Status    string `json:"status" gorm:"type: varchar(50)"`
 }
 
 type LoginRequest struct {
-	Name     string `gorm:"type: varchar(255)" json:"name"`
-	Email    string `gorm:"type: varchar(255)" json:"email"`
-	Password string `gorm:"type: varchar(255)" json:"password"`
-}
-
-type LoginResponse struct {
-	Name     string `gorm:"type: varchar(255)" json:"name"`
-	Email    string `gorm:"type: varchar(255)" json:"email"`
-	Password string `gorm:"type: varchar(255)" json:"password"`
-	Token    string `gorm:"type: varchar(255)" json:"token"`
+	Email    string `gorm:"type: varchar(255)" json:"email" validate:"required"`
+	Password string `gorm:"type: varchar(255)" json:"password" validate:"required"`
 }

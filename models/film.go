@@ -1,27 +1,40 @@
 package models
 
-import "time"
-
 type Film struct {
-	ID            int              `json:"id" gorm:"primary_key:auto_increment"`
-	Title         string           `json:"title" form:"title" gorm:"type: varchar(255)"`
-	ThumbnailFilm string           `json:"thumbnailfilm" form:"thumbnailfilm" gorm:"type: varchar(255)"`
-	Image         string           `json:"image" form:"image" gorm:"type: varchar(255)"`
-	Description   string           `json:"description" gorm:"type:text" form:"desc"`
-	Year          int              `json:"year" gorm:"type: int"`
-	Category      CategoryResponse `json:"category"`
+	ID            int              `json:"id"`
+	Title         string           `json:"title" gorm:"type:varchar(225)"`
+	ThumbnailFilm string           `json:"thumbnailFilm" gorm:"type:varchar(225)"`
+	Year          int              `json:"year" gorm:"type:int"`
 	CategoryID    int              `json:"category_id" form:"category_id"`
-	CreatedAt     time.Time        `json:"-"`
-	UpdatedAt     time.Time        `json:"-"`
+	Category      CategoryResponse `json:"category"`
+	Description   string           `json:"description" gorm:"type:varchar(225)"`
 }
 
 type FilmResponse struct {
+	ID            int              `json:"id"`
+	Title         string           `json:"title"`
+	ThumbnailFilm string           `json:"thumbnailFilm"`
+	Year          int              `json:"year"`
+	CategoryID    int              `json:"category_id"`
+	Category      CategoryResponse `json:"category"`
+	Description   string           `json:"description"`
+}
+
+type FilmCategoryResponse struct {
 	ID            int    `json:"id"`
 	Title         string `json:"title"`
-	ThumbnailFilm string `json:"thumbnailfilm"`
+	ThumbnailFilm string `json:"thumbnailFilm"`
 	Year          int    `json:"year"`
-	CategoryID    int    `json:"category_id" form:"category_id"`
-	Description   string `json:"description" gorm:"type:text" form:"desc"`
+	CategoryID    int    `json:"category_id"`
+	Description   string `json:"description"`
+}
+
+func (CategoryResponse) TableName() string {
+	return "categories"
+}
+
+func (FilmCategoryResponse) TableName() string {
+	return "films"
 }
 
 func (FilmResponse) TableName() string {

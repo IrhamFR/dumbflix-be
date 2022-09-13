@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	categoriesdto "dumbflix/dto/category"
 	dto "dumbflix/dto/result"
 	"dumbflix/models"
 	"dumbflix/repositories"
@@ -13,29 +12,29 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type handlerForCategory struct {
+type handlerCategory struct {
 	CategoryRepository repositories.CategoryRepository
 }
 
-func HandlerCategory(CategoryRepository repositories.CategoryRepository) *handlerForCategory {
-	return &handlerForCategory{CategoryRepository}
+func HandlerCategory(CategoryRepository repositories.CategoryRepository) *handlerCategory {
+	return &handlerCategory{CategoryRepository}
 }
 
-func (h *handlerForCategory) FindCategory(w http.ResponseWriter, r *http.Request) {
+func (h *handlerCategory) FindCategories(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	film, err := h.CategoryRepository.FindCategory()
+	categories, err := h.CategoryRepository.FindCategories()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(err.Error())
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: film}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: categories}
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *handlerForCategory) GetCategory(w http.ResponseWriter, r *http.Request) {
+func (h *handlerCategory) GetCategory(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
@@ -49,14 +48,14 @@ func (h *handlerForCategory) GetCategory(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponseCategory(category)}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: category}
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *handlerForCategory) CreateCategory(w http.ResponseWriter, r *http.Request) {
+func (h *handlerCategory) CreateCategory(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	request := new(categoriesdto.CreateCategoryRequest)
+	var request models.Category
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -85,14 +84,14 @@ func (h *handlerForCategory) CreateCategory(w http.ResponseWriter, r *http.Reque
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponseCategory(data)}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: data}
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *handlerForCategory) UpdateCategory(w http.ResponseWriter, r *http.Request) {
+func (h *handlerCategory) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	request := new(categoriesdto.UpdateCategoryRequest)
+	var request models.Category
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -101,7 +100,7 @@ func (h *handlerForCategory) UpdateCategory(w http.ResponseWriter, r *http.Reque
 	}
 
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
-	category, err := h.CategoryRepository.GetCategory(int(id))
+	category, err := h.CategoryRepository.GetCategory(id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -122,11 +121,11 @@ func (h *handlerForCategory) UpdateCategory(w http.ResponseWriter, r *http.Reque
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponseCategory(data)}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: data}
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *handlerForCategory) DeleteCategory(w http.ResponseWriter, r *http.Request) {
+func (h *handlerCategory) DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
@@ -147,13 +146,6 @@ func (h *handlerForCategory) DeleteCategory(w http.ResponseWriter, r *http.Reque
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponseCategory(data)}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: data}
 	json.NewEncoder(w).Encode(response)
-}
-
-func convertResponseCategory(u models.Category) categoriesdto.CategoryResponse {
-	return categoriesdto.CategoryResponse{
-		ID:   u.ID,
-		Name: u.Name,
-	}
 }

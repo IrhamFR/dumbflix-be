@@ -7,7 +7,7 @@ func HashingPassword(password string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(hashedByte), nil
+	return string(hashedByte), err
 }
 
 func CheckPasswordHash(password, hashedPassword string) bool {

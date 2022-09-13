@@ -2,7 +2,7 @@ package handlers
 
 import (
 	dto "dumbflix/dto/result"
-	usersdto "dumbflix/dto/users"
+	transactionsdto "dumbflix/dto/transaction"
 	"dumbflix/models"
 	"dumbflix/repositories"
 	"encoding/json"
@@ -13,50 +13,51 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type handler struct {
-	UserRepository repositories.UserRepository
+type handlerTransaction struct {
+	TransactionRepository repositories.TransactionRepository
 }
 
-func HandlerUser(UserRepository repositories.UserRepository) *handler {
-	return &handler{UserRepository}
+func HandlerTransaction(TransactionRepository repositories.TransactionRepository) *handlerTransaction {
+	return &handlerTransaction{TransactionRepository}
 }
 
-func (h *handler) FindUsers(w http.ResponseWriter, r *http.Request) {
+func (h *handlerTransaction) FindTransactions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	users, err := h.UserRepository.FindUsers()
+	transactions, err := h.TransactionRepository.FindTransactions()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(err.Error())
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: users}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: transactions}
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *handler) GetUser(w http.ResponseWriter, r *http.Request) {
+func (h *handlerTransaction) GetTransaction(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
 
-	user, err := h.UserRepository.GetUser(id)
+	var transaction models.Transaction
+	transaction, err := h.TransactionRepository.GetTransaction(id)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
 		json.NewEncoder(w).Encode(response)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: user}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: transaction}
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *handler) CreateUser(w http.ResponseWriter, r *http.Request) {
+func (h *handlerTransaction) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	request := new(usersdto.CreateUserRequest)
+	request := new(transactionsdto.CreatTransactoinRequest)
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -73,34 +74,31 @@ func (h *handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// data form pattern submit to pattern entity db user
-	user := models.User{
-		FullName:  request.FullName,
-		Email:     request.Email,
-		Password:  request.Password,
-		Gender:    request.Gender,
-		Phone:     request.Phone,
-		Address:   request.Address,
-		Subscribe: request.Subscribe,
+	transaction := models.Transaction{
+		StartDate: request.StartDate,
+		DueDate:   request.DueDate,
+		UserID:    request.UserID,
+		Attache:   request.Attache,
 		Status:    request.Status,
 	}
 
-	data, err := h.UserRepository.CreateUser(user)
+	data, err := h.TransactionRepository.CreateTransaction(transaction)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err.Error())
+		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
+		json.NewEncoder(w).Encode(response)
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponse(data)}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponseTransaction(data)}
 	json.NewEncoder(w).Encode(response)
 
 }
 
-func (h *handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+func (h *handlerTransaction) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	request := new(usersdto.UpdateUserRequest) //take pattern data submission
+	request := new(transactionsdto.UpdateTransactionRequest)
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -109,7 +107,7 @@ func (h *handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
-	user, err := h.UserRepository.GetUser(int(id))
+	transactionData, err := h.TransactionRepository.GetTransaction(int(id))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -117,19 +115,23 @@ func (h *handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if request.FullName != "" {
-		user.FullName = request.FullName
+	if request.StartDate != "" {
+		transactionData.StartDate = request.StartDate
 	}
 
-	if request.Email != "" {
-		user.Email = request.Email
+	if request.DueDate != "" {
+		transactionData.DueDate = request.DueDate
 	}
 
-	if request.Password != "" {
-		user.Password = request.Password
+	if request.Attache != "" {
+		transactionData.Attache = request.Attache
 	}
 
-	data, err := h.UserRepository.UpdateUser(user)
+	if request.Status != "" {
+		transactionData.Status = request.Status
+	}
+
+	data, err := h.TransactionRepository.UpdateTransaction(transactionData)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
@@ -138,15 +140,16 @@ func (h *handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponse(data)}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponseTransaction(data)}
 	json.NewEncoder(w).Encode(response)
+
 }
 
-func (h *handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+func (h *handlerTransaction) DeleteTransaction(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
-	user, err := h.UserRepository.GetUser(id)
+	transaction, err := h.TransactionRepository.GetTransaction(id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -154,7 +157,7 @@ func (h *handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := h.UserRepository.DeleteUser(user)
+	data, err := h.TransactionRepository.DeleteTransaction(transaction)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
@@ -163,20 +166,18 @@ func (h *handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponse(data)}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponseTransaction(data)}
 	json.NewEncoder(w).Encode(response)
+
 }
 
-func convertResponse(u models.User) usersdto.UserResponse {
-	return usersdto.UserResponse{
-		ID:        u.ID,
-		FullName:  u.FullName,
-		Email:     u.Email,
-		Password:  u.Password,
-		Gender:    u.Gender,
-		Phone:     u.Phone,
-		Address:   u.Address,
-		Subscribe: u.Subscribe,
-		Status:    u.Status,
+func convertResponseTransaction(t models.Transaction) transactionsdto.TransactionResponse {
+	return transactionsdto.TransactionResponse{
+		ID:        t.ID,
+		StartDate: t.StartDate,
+		DueDate:   t.DueDate,
+		UserID:    t.UserID,
+		Attache:   t.Attache,
+		Status:    t.Status,
 	}
 }

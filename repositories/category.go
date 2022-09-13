@@ -7,22 +7,18 @@ import (
 )
 
 type CategoryRepository interface {
-	FindCategory() ([]models.Category, error)
+	FindCategories() ([]models.Category, error)
 	GetCategory(ID int) (models.Category, error)
 	CreateCategory(category models.Category) (models.Category, error)
 	UpdateCategory(category models.Category) (models.Category, error)
 	DeleteCategory(category models.Category) (models.Category, error)
 }
 
-type repositoryForCategory struct {
-	db *gorm.DB
-}
-
 func RepositoryCategory(db *gorm.DB) *repository {
 	return &repository{db}
 }
 
-func (r *repository) FindCategory() ([]models.Category, error) {
+func (r *repository) FindCategories() ([]models.Category, error) {
 	var categories []models.Category
 	err := r.db.Find(&categories).Error
 
@@ -49,7 +45,7 @@ func (r *repository) UpdateCategory(category models.Category) (models.Category, 
 }
 
 func (r *repository) DeleteCategory(category models.Category) (models.Category, error) {
-	err := r.db.Delete(&category).Error // Using Delete method
+	err := r.db.Delete(&category).Error
 
 	return category, err
 }
